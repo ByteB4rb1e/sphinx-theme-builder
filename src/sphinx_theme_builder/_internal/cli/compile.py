@@ -1,10 +1,11 @@
 """Compilation entrypoint."""
 
+import os
 from typing import List
 
 import click
 
-from ..nodejs import generate_assets
+from ..nodejs import generate_assets, generate_assets_relaxed
 from ..project import Project
 
 
@@ -23,5 +24,9 @@ class CompileCommand:
     def run(self, production: bool) -> int:
         """Make it happen."""
         project = Project.from_cwd()
-        generate_assets(project, production=production)
+
+        if os.environ.get("STB_USE_SYSTEM_NODE", 'True') in ['True', '1']:
+            generate_assets_relaxed(project)
+        else:
+            generate_assets(project, production=production)
         return 0
