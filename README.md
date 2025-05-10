@@ -12,16 +12,27 @@ standardised tools.
 
 <!-- end-elevator-pitch -->
 
+> This is a fork of `pradyunsg/sphinx-theme-builder`, specifically for allowing the
+> circumvention of Node.js environment bootstrapping through `nodeenv`. The
+> workflow is identitical, except for defaulting to using the system's Node.js
+> installation, which can be overridden by setting the `STB_USE_SYSTEM_NODE`
+> environment variable to `0` or `False`.
+> 
+> The minum system requirements for the system's Node.js environment are
+> *v18.19.1* for `node`, and *v9.9.3* for `npm`.
+
 ## Installation
 
 <!-- start-installation -->
 
-This project is available on
-[PyPI](https://pypi.org/project/sphinx-theme-builder/), and can be installed
-using `pip`:
+To use this fork in a project with an existing theme using
+`pradyunsg/sphinx-theme-builder`, edit the `requires` field within the
+`[build-system]` section in the `pyproject.toml` of the theme:
 
 ```
-pip install "sphinx-theme-builder[cli]"
+[build-system]
+requires = ["sphinx-theme-builder @ git+https://github.com/ByteB4rb1e/sphinx-theme-builder.git@main"]
+build-backend = "sphinx_theme_builder"
 ```
 
 This project requires modern versions of CPython (>= 3.10).
