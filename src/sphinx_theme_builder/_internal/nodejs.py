@@ -5,6 +5,7 @@ Broadly, it has a `.nodeenv` created using the nodeenv package; and ensures that
 """
 
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -324,3 +325,48 @@ def generate_assets(project: Project, *, production: bool) -> None:
     run_npm_build(nodeenv=nodeenv, production=production)
 
     log("[green]Done![/]")
+
+
+def require_cmd_semver(
+    version: tuple[int, int, int] = (18, 19, 1),
+    command: list[str] = ["node", "--version"],
+    pattern: re.Pattern = re.compile(r'v([0-9]+).([0-9]+).([0-9]+)'),
+):
+    """require the minimum semantic version of a command's version output
+    """
+    try:
+        # we require command execution in a shell environment, since there are
+        # cases where commands aren't executables but instead shell scripts
+        # wrapping that executable. This is the case for the npm distribution of
+        # MSYS2
+        cmd_version = subprocess.check_output(
+            ' '.join(command),
+            shell=True,
+        ).decode('utf-8').strip()
+    except subprocess.CalledProcessError as e:
+        raise Exception(
+            "unable to call command: '{' '.join(command)}': {e}"
+        ) from e
+
+    try:
+        major, minor, patch = pattern.findall(cmd_version)[0]
+    except IndexError as e:
+        raise Exception(
+            "supplied pattern did not match on command output"
+        ) from e
+    except ValueError as e:
+        raise Exception(
+            "supplied pattern did not supply amount of matching groups " + \
+            "requred for semantic versions."
+        ) from e
+
+    major, minor, patch = [int(n) for n in [major, minor, patch]]
+
+    if major > version[0] or \
+       (major == version[0] and minor > version[1]) or \
+       (major == version[0] and minor == version[1] and patch >= version[2]):
+        return
+    else:
+        raise Exception(
+            f"{cmd_version} < v{'.'.join([str(s) for s in version])}"
+        )
