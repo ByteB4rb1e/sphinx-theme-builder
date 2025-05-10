@@ -370,3 +370,69 @@ def require_cmd_semver(
         raise Exception(
             f"{cmd_version} < v{'.'.join([str(s) for s in version])}"
         )
+
+
+def generate_assets_relaxed(project: Project) -> None:
+    """generate assets with the provided system Node.js runtime
+    """
+    package_json = project.location / "package.json"
+    assert package_json.exists()
+
+    require_cmd_semver(
+        version = (18, 19, 1),
+        command = ["node", "--version"],
+        pattern = re.compile(r'v([0-9]+).([0-9]+).([0-9]+)')
+    )
+
+    require_cmd_semver(
+        version = (9, 9, 3),
+        command = ["npm", "--version"],
+        pattern = re.compile(r'([0-9]+).([0-9]+).([0-9]+)')
+    )
+
+    node_modules = project.location / "node_modules"
+
+    if not node_modules.exists() or \
+       node_modules.stat().st_mtime < package_json.stat().st_mtime:
+
+        if node_modules.exists():
+            log(f"rm: {node_module}")
+            try:
+                shutil.rmtree(node_modules)
+            except OSError as error:
+                raise DiagnosticError(
+                    reference="unable-to-cleanup-node-modules",
+                    message="Could not remove node_modules directory.",
+                    context=str(error),
+                    hint_stmt=f"Deleting {node_modules} and trying again may work.",
+                ) from error
+
+        log("npm install")
+        try:
+            subprocess.run(
+                "npm install",
+                shell=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise DiagnosticError(
+                reference="js-install-failed",
+                message="Javascript dependency installation failed.",
+                context="See above for failure output from the underlying tooling.",
+                hint_stmt=None,
+            ) from e
+
+    log("npm run build")
+    try:
+        subprocess.run(
+            "npm run build",
+            shell=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise DiagnosticError(
+            reference="js-build-failed",
+            message="The Javascript-based build pipeline failed.",
+            context="See above for failure output from the underlying tooling.",
+            hint_stmt=None,
+        ) from error
