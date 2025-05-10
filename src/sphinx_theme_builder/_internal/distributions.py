@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 from .errors import DiagnosticError
-from .nodejs import generate_assets
+from .nodejs import generate_assets, generate_assets_relaxed
 from .project import Project
 from .wheelfile import WheelFile, include_parent_paths
 
@@ -159,7 +159,10 @@ def generate_wheel_distribution(
     editable: bool,
 ) -> str:
     # Generate the JS / CSS assets
-    generate_assets(project, production=not editable)
+    if os.environ.get("STB_USE_SYSTEM_NODE", 'True') in ['True', '1']:
+        generate_assets_relaxed(project)
+    else:
+        generate_assets(project, production=not editable)
 
     wheel_path = (
         destination
