@@ -385,7 +385,7 @@ def generate_assets_relaxed(project: Project) -> None:
     )
 
     require_cmd_semver(
-        version = (9, 9, 3),
+        version = (9, 0, 0),
         command = ["npm", "--version"],
         pattern = re.compile(r'([0-9]+).([0-9]+).([0-9]+)')
     )
